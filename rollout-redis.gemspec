@@ -27,4 +27,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '>= 2.4'
   spec.add_development_dependency 'rspec', '~> 3.12'
   spec.add_development_dependency 'mock_redis', '~> 0.37'
+  spec.add_development_dependency 'rake', '~> 13'
 end

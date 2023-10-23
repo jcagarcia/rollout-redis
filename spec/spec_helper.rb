@@ -1,4 +1,5 @@
 require 'mock_redis'
+require 'rake'
 require 'rollout'
 
 RSpec.configure do |config|
