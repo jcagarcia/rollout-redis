@@ -46,6 +46,17 @@ class Rollout
       def errors
         @data[:errors] || 0
       end
+
+      def to_h
+        {
+          name: @name,
+          percentage: @percentage,
+          data: {
+            requests: requests,
+            errors: errors
+          }
+        }
+      end
   
       private
   
