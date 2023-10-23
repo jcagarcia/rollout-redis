@@ -14,6 +14,7 @@ Topics covered in this README:
   - [Gradual activation based on percentages](#gradual-activation-based-on-percentages)
   - [Caching Feature Flags](#caching-feature-flags)
   - [Auto-deactivating flags](#auto-deactivating-flags)
+- [Rake tasks](#rake-tasks)
 - [Migrating from rollout gem](#migrating-from-rollout-gem-🚨)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
@@ -158,6 +159,39 @@ end
 ```
 
 When any unexpected error appears during the wrapped code execution, the Rollout gem will take it into account for automatically deactivating the feature flag if the threshold of errors is reached. All the managed or captured errors inside the wrapped code will not be taken into consideration.
+
+## Rake tasks
+
+In order to have access to the rollout rakes, you have to load manually the task definitions. For doing so load the rollout rake task:
+
+```ruby
+require 'rollout'
+
+load 'rollout/tasks/rollout.rake'
+```
+
+### Usage
+
+To activate/deactivate features, execute the following rake tasks:
+
+```shell
+bundle exec rake rollout:on[feature_name]
+bundle exec rake rollout:off[feature_name]
+```
+
+To a gradual activation based on percentages, pass the percentage as the second parameter when executing the `on` task.
+
+```shell
+bundle exec rake rollout:on[feature_name,50]
+```
+
+_NOTE_: In both cases, `feature_name` **must not** include quotes e.g. `bundle exec rake rollout:on['feature_name']`, as the gem will be unable to fetch its activation status if so.
+
+For listing all the stored feature flags, do:
+
+```shell
+bundle exec rake rollout:list
+```
 
 ## Migrating from rollout gem 🚨
 
