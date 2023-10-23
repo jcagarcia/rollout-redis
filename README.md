@@ -1,4 +1,4 @@
-# rollout-redis 🚀
+# rollout-redis ⛳️
 
 [![Gem Version](https://badge.fury.io/rb/rollout-redis.svg)](https://badge.fury.io/rb/rollout-redis)
 
@@ -65,6 +65,22 @@ If there is an issue, you have the option to disable a feature:
 
 ```ruby
 @rollout.deactivate('FEATURE_FLAG_NAME')
+```
+
+If you want to list all the stored feature flags, you can use the `features` method:
+
+```ruby
+@rollout.features
+```
+
+The response will be an array of hashes with all the information about the stored feature flags
+
+```ruby
+[
+  { name: 'a-feature-flag', percentage: 100, data: { requests: 50, errors: 1 } },
+  { name: 'another-feature-flag', percentage: 20, data: { requests: 1, errors: 0 } },
+  { name: 'super-feature-flag', percentage: 50, data: { requests: 828, errors: 34 } }
+]
 ```
 
 ## Advanced features 🦾

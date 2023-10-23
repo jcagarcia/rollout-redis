@@ -78,6 +78,19 @@ class Rollout
     raise e
   end
 
+  def features
+    keys = @storage.keys("#{key_prefix}:*")
+    return [] if keys.empty?
+
+    keys.map do |key|
+      data = @storage.get(key)
+      next unless data
+
+      feature_name = key.gsub("#{key_prefix}:", '')
+      Feature.new(feature_name, JSON.parse(data, symbolize_names: true)).to_h
+    end
+  end
+
   def clean_cache
     return unless @cache_enabled
 
@@ -165,6 +178,10 @@ class Rollout
   end
 
   def key(name)
-    "feature-rollout-redis:#{name}"
+    "#{key_prefix}:#{name}"
+  end
+
+  def key_prefix
+    "feature-rollout-redis"
   end
 end

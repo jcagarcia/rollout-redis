@@ -9,8 +9,9 @@ In order to simplify the features of the first versions of the gem, the followin
 - Users and groups management have been replaced with a determinator when checking if the feature flag is active or not.
 - The ability of changing the information stored inside a feature flag.
 - The ability of geting the internal information of a stored feature flag.
+- `#features` method does not return anymore a string with the feature names separated by comma. Now it returns an array of hashes.
 
-This is the complete list of methods that have been removed: `#groups`, `#delete`, `#set`, `#activate_group`, `#deactivate_group`, `#activate_user`, `#deactivate_user`, `#activate_users`, `#deactivate_users`, `#set_users`, `#define_group`, `#user_in_active_users?`, `#inactive?`, `#deactivate_percentage`, `active_in_group?`, `#get`, `#set_feature_data`, `#clear_feature_data`, `#multi_get`, `#features`, `#feature_states`, `#active_features`, `#clear!`, `#exists?`, `#with_feature`.
+This is the complete list of methods that have been removed: `#groups`, `#delete`, `#set`, `#activate_group`, `#deactivate_group`, `#activate_user`, `#deactivate_user`, `#activate_users`, `#deactivate_users`, `#set_users`, `#define_group`, `#user_in_active_users?`, `#inactive?`, `#deactivate_percentage`, `active_in_group?`, `#get`, `#set_feature_data`, `#clear_feature_data`, `#multi_get`, `#feature_states`, `#active_features`, `#clear!`, `#exists?`, `#with_feature`.
 
 If you consider some of these methods or features 👆 should be added again to the gem, please, open an issue and we will evaluate it.
 
