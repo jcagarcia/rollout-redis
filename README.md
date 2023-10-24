@@ -9,13 +9,13 @@ Based on the discontinued [rollout](https://github.com/fetlife/rollout) project,
 Topics covered in this README:
 
 - [Install it](#install-it)
-- [Quick Start](#quick-start-💨)
-- [Advanced features](#advanced-features-🦾)
+- [Quick Start](#quick-start-)
+- [Advanced features](#advanced-features-)
   - [Gradual activation based on percentages](#gradual-activation-based-on-percentages)
   - [Caching Feature Flags](#caching-feature-flags)
   - [Auto-deactivating flags](#auto-deactivating-flags)
 - [Rake tasks](#rake-tasks)
-- [Migrating from rollout gem](#migrating-from-rollout-gem-🚨)
+- [Migrating from rollout gem](#migrating-from-rollout-gem-)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
 
@@ -147,7 +147,7 @@ If you want to allow the gem to deactivate your feature flag automatically when 
 ```ruby
 @rollout ||= Rollout.new(redis)
               .with_cache
-              .with_degrade(sample: 5000, min: 100, threshold: 0.1)
+              .with_degrade(min: 100, threshold: 0.1)
 ```
 
 So now, instead of using the `active?` method, you need to wrap your new code under the `with_feature` method.
@@ -168,6 +168,13 @@ In order to have access to the rollout rakes, you have to load manually the task
 require 'rollout'
 
 load 'rollout/tasks/rollout.rake'
+```
+
+Also, for using the rake tasks, you must set the following env variables
+
+```shell
+ROLLOUT_REDIS_HOST=localhost
+ROLLOUT_REDIS_PORT=6379
 ```
 
 ### Usage
