@@ -73,7 +73,7 @@ class Rollout
       feature.add_error
       save(feature)
 
-      deactivate(feature_name) if degraded?(feature)
+      degrade(feature_name) if degraded?(feature)
     end
     raise e
   end
@@ -145,6 +145,16 @@ class Rollout
   
   def del(feature_name)
     @storage.del(key(feature_name)) == 1
+  end
+
+  def degrade(feature_name)
+    feature = get(feature_name)
+    data_with_degrade = feature.data.merge({
+      percentage: 0,
+      degraded: true,
+      degraded_at: Time.now
+    })
+    @storage.set(key(feature.name), data_with_degrade.to_json)
   end
 
   def from_cache(feature_name)

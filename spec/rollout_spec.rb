@@ -242,8 +242,9 @@ RSpec.describe Rollout do
               instance.with_degrade(min: 100, threshold: 0.5)
             end
 
-            it 'deactivates the feature flag' do
-              101.times do |i|
+            it 'mark the feature flag as degraded' do
+              num_of_requests = 101
+              num_of_requests.times do |i|
                 begin
                   instance_with_degrade.with_feature_flag(feature_flag_name) do
                     raise 'Error' if i.even?
@@ -251,18 +252,27 @@ RSpec.describe Rollout do
                 rescue
                   data = storage.get(key(feature_flag_name))
 
-                  if data
-                    expect(JSON.parse(data, symbolize_names: true)).to eq({
-                      errors: (i / 2) + 1,
-                      requests: i + 1,
+                  errors = (i / 2) + 1
+                  requests = i + 1
+                  if data && requests < num_of_requests
+                    expected_data = {
+                      errors: errors,
+                      requests: requests,
                       percentage: 100
-                    })
+                    }
+                    expect(JSON.parse(data, symbolize_names: true)).to eq(expected_data)
                   end
                 end
               end
 
               data = storage.get(key(feature_flag_name))
-              expect(data).to be nil
+              expect(JSON.parse(data, symbolize_names: true)).to eq({
+                errors: 51,
+                requests: 101,
+                percentage: 0,
+                degraded: true,
+                degraded_at: Time.now.to_s
+              })
             end
           end
 
