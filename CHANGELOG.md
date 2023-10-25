@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.0] - 2023-10-25
+
+### Added
+- `#with_notifications` method for allowing to send notifications when some different event occurs.
+
+### Changed
+- When the threshold of errors is reached when using the `with_degrade` feature, instead of deleting the feature flag from the redis, we are marking it now as degraded, moving the activation percentage to 0% and adding some useful information to the feature flag stored data.
+
+## [0.3.1] - 2023-10-24
+- Same as 0.3.0. When testing GitHub actions for moving to first release `1.0.0` it deployed a new version of the gem by error.
+
 ## [0.3.0] - 2023-10-24
 
 ### Added

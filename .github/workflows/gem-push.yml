@@ -34,6 +34,21 @@ jobs:
         GEM_HOST_API_KEY: "Bearer ${{secrets.GITHUB_TOKEN}}"
         OWNER: ${{ github.repository_owner }}
 
+    - name: Get Gem Version
+      id: get-version
+      run: |
+        VERSION=$(ruby -r './lib/rollout/version.rb' -e "puts Rollout::VERSION")
+        echo "::set-output name=version::$VERSION"
+      shell: bash
+
+    - name: Check if Gem Version Exists in ruby gems
+      run: |
+        gem fetch rollout-redis -v ${{ steps.get-version.outputs.version }}
+          if [ $? -eq 0 ]; then
+            echo "Gem version already exists on RubyGems. Skipping the push to RubyGems."
+            exit 0
+          fi
+
     - name: Publish to RubyGems
       run: |
         mkdir -p $HOME/.gem

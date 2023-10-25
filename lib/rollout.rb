@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
-require 'rollout/feature'
-require 'rollout/version'
 require 'redis'
 require 'json'
+
+require 'rollout/feature'
+require 'rollout/notifications/channels/email'
+require 'rollout/notifications/channels/slack'
+require 'rollout/notifications/notifiers/degrade'
+require 'rollout/notifications/notifiers/status_change'
+require 'rollout/version'
+
 
 class Rollout
 
@@ -33,14 +39,36 @@ class Rollout
     self
   end
 
+  def with_notifications(status_change:[], degrade:[])
+    status_change_channels = status_change
+    degrade_channels = degrade
+
+    if !status_change_channels.empty?
+      @status_change_notifier = Notifications::Notifiers::StatusChange.new(status_change_channels)
+    end
+
+    if !degrade_channels.empty?
+      @degrade_notifier = Notifications::Notifiers::Degrade.new(degrade_channels)
+    end
+
+    self
+  end
+
   def activate(feature_name, percentage=100)
     data = { percentage: percentage }
     feature = Feature.new(feature_name, data)
-    @cache[feature_name] = {
-      feature: feature,
-      timestamp: Time.now.to_i
-    } if @cache_enabled
-    save(feature) == "OK"
+    result = save(feature) == "OK"
+
+    if result
+      @cache[feature_name] = {
+        feature: feature,
+        timestamp: Time.now.to_i
+      } if @cache_enabled
+
+      @status_change_notifier&.notify(feature_name, :activated, percentage)
+    end
+
+    result
   end
 
   def activate_percentage(feature_name, percentage)
@@ -48,7 +76,11 @@ class Rollout
   end
 
   def deactivate(feature_name)
-    del(feature_name)
+    result = del(feature_name)
+
+    @status_change_notifier&.notify(feature_name, :deactivated)
+
+    result
   end
 
   def active?(feature_name, determinator = nil)
@@ -73,7 +105,7 @@ class Rollout
       feature.add_error
       save(feature)
 
-      deactivate(feature_name) if degraded?(feature)
+      degrade(feature_name) if degraded?(feature)
     end
     raise e
   end
@@ -115,7 +147,11 @@ class Rollout
 
         @storage.set(new_key, new_data)
 
-        puts "Migrated key: #{old_key} to #{new_key} with data #{new_data}"
+        puts "Migrated key: #{old_key.gsub('feature:', '')} to #{new_key.gsub('feature-rollout-redis:', '')} with data #{new_data}"
+
+        if percentage > 0
+          @status_change_notifier&.notify(new_key.gsub('feature-rollout-redis:', ''), :activated, percentage)
+        end
       end
     end
   end
@@ -145,6 +181,22 @@ class Rollout
   
   def del(feature_name)
     @storage.del(key(feature_name)) == 1
+  end
+
+  def degrade(feature_name)
+    feature = get(feature_name)
+    data_with_degrade = feature.data.merge({
+      percentage: 0,
+      degraded: true,
+      degraded_at: Time.now
+    })
+    result = @storage.set(key(feature.name), data_with_degrade.to_json) == "OK"
+
+    if result
+      @degrade_notifier.notify(feature_name, feature.requests, feature.errors)
+    end
+
+    result
   end
 
   def from_cache(feature_name)
