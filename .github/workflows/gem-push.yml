@@ -35,11 +35,11 @@ jobs:
         OWNER: ${{ github.repository_owner }}
 
     - name: Get Gem Version
-        id: get-version
-        run: |
-          VERSION=$(ruby -r './lib/rollout/version.rb' -e "puts Rollout::VERSION")
-          echo "::set-output name=version::$VERSION"
-        shell: bash
+      id: get-version
+      run: |
+        VERSION=$(ruby -r './lib/rollout/version.rb' -e "puts Rollout::VERSION")
+        echo "::set-output name=version::$VERSION"
+      shell: bash
 
     - name: Check if Gem Version Exists in ruby gems
       run: |
