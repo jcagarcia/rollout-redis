@@ -168,7 +168,7 @@ _NOTE_: All the managed or captured errors inside the wrapped code will not be t
 `rollout-redis` gem can send different notifications to your development team. For enabling this feature, you just need to use the `with_notifications` instance method providing the channels where you want to publish each of the different events that can occur:
 
 - **status_change**: This notification is triggered when a feature flag is activated or deactivated using the `rollout-redis` gem.
-- **degraded**: This notification is triggered when a feature flag is automatically degraded because the threshold of errors is reached
+- **degrade**: This notification is triggered when a feature flag is automatically degraded because the threshold of errors is reached
   - The instance must be configured for automatically degrading using the `with_degrade` instance method.
 
 You must provide at least one [channel](#defining-the-channels) as a parameter if you want to enable the notifications for that specific event. If no channels provided, the notifications will not be sent. 
@@ -179,7 +179,7 @@ You must provide at least one [channel](#defining-the-channels) as a parameter i
               .with_degrade(min: 100, threshold: 0.1)
               .with_notifications(
                 status_change: [slack_channel],
-                degraded: [slack_channel, email_channel]
+                degrade: [slack_channel, email_channel]
               )
 ```
 
