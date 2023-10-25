@@ -165,41 +165,27 @@ _NOTE_: All the managed or captured errors inside the wrapped code will not be t
 
 ### Sending notifications
 
-`rollout-redis` gem can send you different notifications. For enabling it, you just need to use the `with_notifications` instance method providing a list of notifications to be sent.
+`rollout-redis` gem can send different notifications to your development team. For enabling this feature, you just need to use the `with_notifications` instance method providing the channels where you want to publish each of the different events that can occur:
+
+- **status_change**: This notification is triggered when a feature flag is activated or deactivated using the `rollout-redis` gem.
+- **degraded**: This notification is triggered when a feature flag is automatically degraded because the threshold of errors is reached
+  - The instance must be configured for automatically degrading using the `with_degrade` instance method.
+
+You must provide at least one [channel](#defining-the-channels) as a parameter if you want to enable the notifications for that specific event. If no channels provided, the notifications will not be sent. 
 
 ```ruby
 @rollout ||= Rollout.new(redis)
               .with_cache
               .with_degrade(min: 100, threshold: 0.1)
-              .with_notifications(notifications)
-```
-
-Check the following sections for knowing more about how to [define the notifications list](#defining-the-notifications-list).
-
-#### Defining the notifications list
-
-`rollout-redis` gem offers different notifications that can be configured to be send to different channels. When instantiating any of the notifications above, you always must provide at least one [channel](#defining-the-channels) as a parameter. 
-
-- **StatusChange**: This notification is triggered when a feature flag is activated or deactivated using the `rollout-redis` gem.
-- **ExtendedPeriod**: This notification is triggered when a feature flag has been active for an extended period of time. This notification would help teams stay aware of long-running flags and ensure that they are reviewed and, if necessary, either removed or adjusted.
-  - This notification must be instantiated with the `max_days` parameter. When a feature flag is 100% active for more than the defined days, the notification is sent.
-  - This notification must be instantiated with the `at` parameter. The reminder notification will be sent to the defined hour.
-- **Degraded**: This notification is triggered when a feature flag is automatically degraded because the threshold of errors is reached
-  - The instance must be configured for automatically degrading using the `with_degrade` instance method.
-
-So this is an example of a notifications list that can be provided to the `with_notifications` method:
-
-```ruby
-notifications = [
-  Rollout::Notifications::StatusChange.new(slack_channel),
-  Rollout::Notifications::ExtendedPeriod.new(slack_channel, max_days: 30, at: '09:30'),
-  Rollout::Notifications::Degraded.new([slack_channel, email_channel])
-]
+              .with_notifications(
+                status_change: [slack_channel],
+                degraded: [slack_channel, email_channel]
+              )
 ```
 
 #### Defining the channels
 
-When instantiating a notification, you can provide the different channels where the notification should be published. `rollout-redis` gem offers different channels that can be configured.
+When enabling a notification, you can provide the different channels where the notification should be published. `rollout-redis` gem offers different channels that can be configured.
 
 ##### Slack Channel
 
@@ -210,9 +196,12 @@ The first thing to do is to setup an incoming webhook service integration. You c
 After that, you can provide the obtained webhook url when instantiating the Slack channel.
 
 ```ruby
+require 'rollout'
+
 slack_channel = Rollout::Notifications::Channels::Slack.new(
   webhook_url: ENV.fetch('SLACK_COMPANY_WEBHOOK_URL'),
-  channel: '#feature-flags-notifications'
+  channel: '#feature-flags-notifications',
+  username: 'rollout-redis'
 )
 ```
 
@@ -221,6 +210,8 @@ slack_channel = Rollout::Notifications::Channels::Slack.new(
 Allows you to send notifications via email.
 
 ```ruby
+require 'rollout'
+
 email_channel = Rollout::Notifications::Channels::Email.new(
   smtp_host: ENV.fetch('SMTP_HOST'),
   smtp_port: ENV.fetch('SMTP_PORT'),
@@ -295,7 +286,9 @@ We welcome and appreciate contributions from the open-source community. Before y
 
 ### Development
 
-This project is dockerized. Once you clone the repository, you can use the `Make` commands to build the project.
+This project is dockerized, so be sure you have docker installed in your machine. 
+
+Once you clone the repository, you can use the `Make` commands to build the project.
 
 ```shell
 make build

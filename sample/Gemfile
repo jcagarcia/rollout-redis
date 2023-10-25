@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gem 'rollout-redis', path: '../'
+gem 'mock_redis', '~> 0.37'
+gem 'roda', '~> 3'
