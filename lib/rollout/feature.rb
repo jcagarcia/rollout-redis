@@ -4,7 +4,7 @@ require 'zlib'
 
 class Rollout
     class Feature
-      attr_accessor :percentage
+      attr_accessor :percentage, :degrade
       attr_reader :name, :data
 
       RAND_BASE = (2**32 - 1) / 100.0
@@ -13,6 +13,7 @@ class Rollout
         @name = name
         @data = data
         @percentage = @data[:percentage]
+        @degrade = @data[:degrade]
       end
   
       def active?(determinator=nil)
@@ -48,7 +49,7 @@ class Rollout
       end
 
       def to_h
-        {
+        h = {
           name: @name,
           percentage: @percentage,
           data: {
@@ -56,6 +57,12 @@ class Rollout
             errors: errors
           }
         }
+
+        h.merge!({
+          degrade: @degrade
+        }) if @degrade
+
+        h
       end
   
       private

@@ -21,6 +21,8 @@ class Rollout
     @storage = storage
     @cache_enabled = false
     @degrade_enabled = false
+    @old_gem_compatibility_enabled = false
+    @auto_migrate_from_old_format = false
   end
 
   def with_cache(expires_in: 300)
@@ -54,8 +56,22 @@ class Rollout
     self
   end
 
-  def activate(feature_name, percentage=100)
+  def with_old_rollout_gem_compatibility(auto_migration: false)
+    @old_gem_compatibility_enabled = true
+    @auto_migrate_from_old_format = auto_migration
+
+    self
+  end
+
+  def activate(feature_name, percentage=100, degrade: nil)
     data = { percentage: percentage }
+    data.merge!({
+      degrade: {
+        min: degrade[:min] || 0,
+        threshold: degrade[:threshold] || 0
+      }
+    }) if degrade
+
     feature = Feature.new(feature_name, data)
     result = save(feature) == "OK"
 
@@ -84,12 +100,19 @@ class Rollout
   end
 
   def active?(feature_name, determinator = nil)
-    feature = get(feature_name, determinator)
+    feature = get(feature_name)
+    if feature.nil? && @old_gem_compatibility_enabled
+      feature = get_with_old_format(feature_name)
+      if feature && @auto_migrate_from_old_format
+        activate(feature_name, feature.percentage)
+      end
+    end
+
     return false unless feature
 
     active = feature.active?(determinator)
 
-    if active && @degrade_enabled
+    if active && degrade_enabled?(feature)
       feature.add_request
       save(feature)
     end
@@ -99,9 +122,11 @@ class Rollout
 
   def with_feature_flag(feature_name, determinator = nil, &block)
     yield if active?(feature_name, determinator)
+  rescue Rollout::Error => e
+    raise
   rescue => e
-    feature = get(feature_name, determinator)
-    if @degrade_enabled && feature
+    feature = get(feature_name)
+    if feature && degrade_enabled?(feature)
       feature.add_error
       save(feature)
 
@@ -147,7 +172,7 @@ class Rollout
 
         @storage.set(new_key, new_data)
 
-        puts "Migrated key: #{old_key.gsub('feature:', '')} to #{new_key.gsub('feature-rollout-redis:', '')} with data #{new_data}"
+        puts "Migrated redis key from #{old_key} to #{new_key}. Migrating data from '#{old_data}' to '#{new_data}'."
 
         if percentage > 0
           @status_change_notifier&.notify(new_key.gsub('feature-rollout-redis:', ''), :activated, percentage)
@@ -158,7 +183,7 @@ class Rollout
 
   private
 
-  def get(feature_name, determinator = nil)
+  def get(feature_name)
     feature = from_redis(feature_name)
     return unless feature
 
@@ -173,6 +198,15 @@ class Rollout
     raise Rollout::Error.new(e) unless cached_feature
 
     cached_feature
+  end
+
+  def get_with_old_format(feature_name)
+    feature = from_redis_with_old_format(feature_name)
+    return unless feature
+
+    feature
+  rescue ::Redis::BaseError => e
+    raise Rollout::Error.new(e)
   end
 
   def save(feature)
@@ -218,22 +252,58 @@ class Rollout
     Feature.new(feature_name, JSON.parse(data, symbolize_names: true))
   end
 
+  def from_redis_with_old_format(feature_name)
+    old_data = @storage.get(old_key(feature_name))
+    return unless old_data
+
+    percentage = old_data.split('|')[0].to_i
+
+    new_data = {
+      percentage: percentage,
+      requests: 0,
+      errors: 0
+    }
+
+    Feature.new(feature_name, new_data)
+  end
+
   def expired?(timestamp)
     Time.now.to_i - timestamp > @cache_time
   end
 
   def degraded?(feature)
-    return false if !@degrade_enabled
-    return false if feature.requests < @degrade_min
+    return false if !degrade_enabled?(feature)
 
-    feature.errors > @degrade_threshold * feature.requests
+    if feature.degrade
+      degrade_min = feature.degrade[:min]
+      degrade_threshold = feature.degrade[:threshold]
+    else
+      degrade_min = @degrade_min
+      degrade_threshold = @degrade_threshold
+    end
+
+    return false if feature.requests < degrade_min
+
+    feature.errors > degrade_threshold * feature.requests
+  end
+
+  def degrade_enabled?(feature)
+    @degrade_enabled || !feature.degrade.nil?
   end
 
   def key(name)
     "#{key_prefix}:#{name}"
   end
 
+  def old_key(name)
+    "#{old_key_prefix}:#{name}"
+  end
+
   def key_prefix
     "feature-rollout-redis"
+  end
+
+  def old_key_prefix
+    "feature"
   end
 end

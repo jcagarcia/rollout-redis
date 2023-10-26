@@ -4,6 +4,15 @@ All changes to `rollout-redis` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2023-10-xx
+
+### Added
+- `#with_old_rollout_gem_compatibility` method for allowing working with Feature Flags that were stored by the old `rollout` gem.
+- `rollout:migrate_from_rollout_format` rake task for performing a migration of the feature flags stored by the old `rollout` gem to the new `rollout-redis` format.
+- Add a new parameter when performing `#activate` method for providing a specific degrade configuration for the feature flag that is being activated.
+- Add a new parameter when performing `rollout:on` rake task for providing a specific degrade configuration for the feature flag that is being activated.
+- You can implement now your own `Rollout::Notifications::Channels::Channel` in case the ones offered by the `gem` are not enough.
+- New notification `extended_time` can be configured when using the `#with_notifications` method in order to notify to the different channels the feature flags that are active for a long time period.
 
 ## [1.0.0] - 2023-10-25
 
