@@ -17,7 +17,7 @@ Topics covered in this README:
   - [Sending Notifications](#sending-notifications)
 - [Rake tasks](#rake-tasks)
 - [Migrating from rollout gem](#migrating-from-rollout-gem-)
-  - [Compabile payloads and keys](#compatible-payloads-and-keys)
+  - [Compatible payloads and keys](#compatible-payloads-and-keys)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
 
