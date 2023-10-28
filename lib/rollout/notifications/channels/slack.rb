@@ -27,10 +27,6 @@ class Rollout
           end
         end
 
-        def type
-          :slack
-        end
-
         private
 
         def slack_notifier

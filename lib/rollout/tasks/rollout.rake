@@ -1,13 +1,20 @@
 
 namespace :rollout do
   desc "Activate a feature"
-  task :on, [:feature, :percentage] => :environment do |task, args|
+  task :on, [:feature, :percentage, :degrade_min, :degrade_threshold] => :environment do |task, args|
     if args.feature
-      puts "Activating feature #{args.feature}..."
       if args.percentage
-        activated = rollout.activate(args.feature, args.percentage.to_i)
+        percentage = args.percentage.to_i
       else
-        activated = rollout.activate(args.feature)
+        percentage = 100
+      end
+
+      if args.degrade_min && args.degrade_threshold
+        puts "Activating feature #{args.feature} at #{percentage}% (degrade config set to a min of #{args.degrade_min} requests and a threshold of error of #{args.degrade_threshold.to_f*100}%)..."
+        activated = rollout.activate(args.feature, percentage, degrade: { min: args.degrade_min.to_i, threshold: args.degrade_threshold.to_f})
+      else
+        puts "Activating feature #{args.feature} at #{percentage}%..."
+        activated = rollout.activate(args.feature, percentage)
       end
 
       if activated
@@ -41,6 +48,13 @@ namespace :rollout do
     else
       puts "- No feature flags stored"
     end
+  end
+
+  desc "Migrate stored feature flags to the new format without removing the old information"
+  task migrate_from_rollout_format: :environment do
+    puts "Starting the migration..."
+    rollout.migrate_from_rollout_format
+    puts "Migration has finished!"
   end
 
   private

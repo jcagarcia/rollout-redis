@@ -17,6 +17,7 @@ Topics covered in this README:
   - [Sending Notifications](#sending-notifications)
 - [Rake tasks](#rake-tasks)
 - [Migrating from rollout gem](#migrating-from-rollout-gem-)
+  - [Compatible payloads and keys](#compatible-payloads-and-keys)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
 
@@ -143,12 +144,24 @@ In the case that you need to clear the cache at any point, you can make use of t
 
 ### Auto-deactivating flags
 
-If you want to allow the gem to deactivate your feature flag automatically when a threshold of errors is reached, you can enable the degrade feature using the `with_degrade` method.
+If you want to allow the gem to deactivate all the feature flags automatically when a threshold of errors is reached, you can enable the degrade feature using the `with_degrade` method.
 
 ```ruby
 @rollout ||= Rollout.new(redis)
               .with_cache
               .with_degrade(min: 100, threshold: 0.1)
+```
+
+However, if you just want to activate the degradation of an specific feature flag, you need to provide the following information when activating the feature flag (note that now the percentage is a mandatory parameter if you want to pass the degrade options):
+
+```ruby
+@rollout.activate('FEATURE_FLAG_NAME', 100, degrade: { min: 500, threshold: 0.2 })
+```
+
+The same configuration 👆 is available when using the rake task for activating the feature flag. Check [Rake tasks](#rake-tasks) section.
+
+```shell
+bundle exec rake rollout:on[FEATURE_FLAG_NAME,100,500,0.2]
 ```
 
 So now, instead of using the `active?` method, you need to wrap your new code under the `with_feature` method.
@@ -220,6 +233,39 @@ email_channel = Rollout::Notifications::Channels::Email.new(
 )
 ```
 
+##### Custom channel
+
+If you want to send the notifications using a different channel not offered by this gem, you can implement your own class with a `publish` method.
+
+```ruby
+require 'rollout'
+
+module YourApp
+  class YourCustomChannel
+    def initialize()
+      # provide here whatever you need for configuring your channel
+    end
+
+    def publish(text)
+      # Implement the way you want to publish the notification
+    end
+  end
+end
+```
+
+After implementing it, you can pass it to the list of configured channels
+
+```ruby
+your_channel = YourApp::YourCustomChannel.new(url: 'wadus', param2: 'foo')
+@rollout ||= Rollout.new(redis)
+              .with_cache
+              .with_degrade(min: 100, threshold: 0.1)
+              .with_notifications(
+                status_change: [your_channel],
+                degrade: [your_channel]
+              )
+```
+
 ## Rake tasks
 
 In order to have access to the rollout rakes, you have to load manually the task definitions. For doing so load the rollout rake task:
@@ -260,9 +306,19 @@ For listing all the stored feature flags, do:
 bundle exec rake rollout:list
 ```
 
+For migrating feature flags stored using the old `rollout` gem format (check [migration guide](https://github.com/jcagarcia/rollout-redis/blob/main/MIGRATING_FROM_ROLLOUT_GEM.md)), do:
+
+```shell
+bundle exec rake rollout:migrate_from_rollout_format
+```
+
 ## Migrating from rollout gem 🚨
 
 If you are currently using the unmaintained [rollout](https://github.com/fetlife/rollout) gem, you should consider checking this [migration guide](https://github.com/jcagarcia/rollout-redis/blob/main/MIGRATING_FROM_ROLLOUT_GEM.md) for start using the new `rollout-redis` gem.
+
+### Compatible payloads and keys
+
+You can use the `.with_old_rollout_gem_compatibility` instance method for making the `rollout-redis` gem work as the the discontinued [rollout](https://github.com/fetlife/rollout) gem in terms of redis storage and format storage. Check the [migration guide](https://github.com/jcagarcia/rollout-redis/blob/main/MIGRATING_FROM_ROLLOUT_GEM.md) for more information.
 
 ## Changelog
 
