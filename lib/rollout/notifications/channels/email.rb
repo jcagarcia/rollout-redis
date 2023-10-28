@@ -21,10 +21,6 @@ class Rollout
           mail.delivery_method :smtp, address: @smtp_host, port: @smtp_port
           mail.deliver
         end
-
-        def type
-          :email
-        end
       end
     end
   end

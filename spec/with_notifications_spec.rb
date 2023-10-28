@@ -12,12 +12,16 @@ RSpec.describe Rollout do
   let(:email_channel) do
     Rollout::Notifications::Channels::Email.new(smtp_host: 'localhost', smtp_port: '587', to: 'developers@mycompany.com')
   end
+  let(:custom_channel) do
+    double('a-custom-channel', publish: nil)
+  end
 
   describe '#with_notifications' do
     let(:channels) do
       [
         slack_channel,
-        email_channel
+        email_channel,
+        custom_channel
       ]
     end
 
@@ -36,6 +40,7 @@ RSpec.describe Rollout do
 
           expect(slack_channel).to receive(:publish).with(expected_message)
           expect(email_channel).to receive(:publish).with(expected_subject, expected_message)
+          expect(custom_channel).to receive(:publish).with(expected_message)
 
           instance_with_notifications.activate(feature_flag_name, percentage)
         end
@@ -50,6 +55,7 @@ RSpec.describe Rollout do
 
           expect(slack_channel).to receive(:publish).with(expected_message)
           expect(email_channel).to receive(:publish).with(expected_subject, expected_message)
+          expect(custom_channel).to receive(:publish).with(expected_message)
 
           instance_with_notifications.deactivate(feature_flag_name)
         end
@@ -72,6 +78,18 @@ RSpec.describe Rollout do
           end
         end
       end
+
+      context 'but some channel does not have the method publish implemented' do
+        let(:custom_channel) do
+          double('my-custom-channel', other_method: nil)
+        end
+
+        it 'raises an error' do
+          expect {
+            instance_with_notifications
+          }.to raise_error
+        end
+      end
     end
 
     context 'when degrade event has channels defined' do
@@ -92,6 +110,7 @@ RSpec.describe Rollout do
   
             expect(slack_channel).to receive(:publish).with(expected_message)
             expect(email_channel).to receive(:publish).with(expected_subject, expected_message)
+            expect(custom_channel).to receive(:publish).with(expected_message)
 
             101.times do |i|
               begin
@@ -102,7 +121,19 @@ RSpec.describe Rollout do
               end
             end
           end
-        end 
+        end
+
+        context 'but some channel does not have the method publish implemented' do
+          let(:custom_channel) do
+            double('my-custom-channel', other_method: nil)
+          end
+
+          it 'raises an error' do
+            expect {
+              instance_with_notifications
+            }.to raise_error
+          end
+        end
       end
     end
   end

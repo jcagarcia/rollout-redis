@@ -46,10 +46,16 @@ class Rollout
     degrade_channels = degrade
 
     if !status_change_channels.empty?
+      status_change_channels.each do |c|
+        raise Rollout::Error.new("Channel #{c.class.name} does not implement `publish` method") unless c.respond_to?(:publish)
+      end
       @status_change_notifier = Notifications::Notifiers::StatusChange.new(status_change_channels)
     end
 
     if !degrade_channels.empty?
+      degrade_channels.each do |c|
+        raise Rollout::Error.new("Channel #{c.class.name} does not implement `publish` method") unless c.respond_to?(:publish)
+      end
       @degrade_notifier = Notifications::Notifiers::Degrade.new(degrade_channels)
     end
 

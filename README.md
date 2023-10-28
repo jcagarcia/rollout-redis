@@ -235,7 +235,36 @@ email_channel = Rollout::Notifications::Channels::Email.new(
 
 ##### Custom channel
 
-TODO
+If you want to send the notifications using a different channel not offered by this gem, you can implement your own class with a `publish` method.
+
+```ruby
+require 'rollout'
+
+module YourApp
+  class YourCustomChannel
+    def initialize()
+      # provide here whatever you need for configuring your channel
+    end
+
+    def publish(text)
+      # Implement the way you want to publish the notification
+    end
+  end
+end
+```
+
+After implementing it, you can pass it to the list of configured channels
+
+```ruby
+your_channel = YourApp::YourCustomChannel.new(url: 'wadus', param2: 'foo')
+@rollout ||= Rollout.new(redis)
+              .with_cache
+              .with_degrade(min: 100, threshold: 0.1)
+              .with_notifications(
+                status_change: [your_channel],
+                degrade: [your_channel]
+              )
+```
 
 ## Rake tasks
 
